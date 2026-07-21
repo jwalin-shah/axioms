@@ -1,0 +1,290 @@
+[
+  {
+    "id": "GOMEM-001",
+    "tensor_equation": "∀program P: (¬∃data_race(P)) ⇒ (SC(P))",
+    "section": "go.dev/ref/mem#introduction — DRF-SC Guarantee",
+    "counterexample": "A program with a data race (e.g., one goroutine writes int x while another reads x without synchronization) has undefined behavior and is NOT guaranteed sequentially consistent execution.",
+    "verification_method": "runtime",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-002",
+    "tensor_equation": "∀goroutine g: ∀operations op1, op2 in g: (sequenced_before(op1, op2) ∧ op1 visible_to op2) ⇒ consistent_sequential_execution(g)",
+    "section": "go.dev/ref/mem#introduction — Operation Classification",
+    "counterexample": "A goroutine that reads a value that was never written to that location (out-of-thin-air) would violate this — but compilers are forbidden from producing such reads.",
+    "verification_method": "model-check",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-003",
+    "tensor_equation": "∀ordinary_read r at location x: r ≠ synchronizing ∧ ∃write w at x: (happens_before(w, r) ∧ ¬∃write w' at x: (happens_before(w, w') ∧ happens_before(w', r))) ⇒ W(r) = w",
+    "section": "go.dev/ref/mem#happens-before — Requirement 3: Ordinary Data Read Visibility",
+    "counterexample": "var x int; goroutine A: x = 1; goroutine B: print(x) — if B observes x==1 but A's write was supposed to happen after B's read according to happens-before, that's a violation (but actually just a data race).",
+    "verification_method": "model-check",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-004",
+    "tensor_equation": "∃read_like r, write_like w at location x: (¬happens_before(r, w) ∧ ¬happens_before(w, r) ∧ (¬is_synchronizing(r) ∨ ¬is_synchronizing(w))) ⇒ data_race(r, w)",
+    "section": "go.dev/ref/mem#happens-before — Data Race Formal Definition (Read-Write)",
+    "counterexample": "var x int; goroutine A: x = 1; goroutine B: println(x) — no synchronization, so x=1 and println(x) are unordered by happens-before → read-write data race.",
+    "verification_method": "runtime",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-005",
+    "tensor_equation": "∃write_like w1, write_like w2 at location x: (w1 ≠ w2 ∧ ¬happens_before(w1, w2) ∧ ¬happens_before(w2, w1) ∧ (¬is_synchronizing(w1) ∨ ¬is_synchronizing(w2))) ⇒ data_race(w1, w2)",
+    "section": "go.dev/ref/mem#happens-before — Data Race Formal Definition (Write-Write)",
+    "counterexample": "var x int; goroutine A: x = 1; goroutine B: x = 2 — two writes to x with no synchronization → write-write data race.",
+    "verification_method": "runtime",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-006",
+    "tensor_equation": "∀package p, q: (imports(p, q)) ⇒ (happens_before(completion(q.init), start(p.init)))",
+    "section": "go.dev/ref/mem#inititialization — HB1: Package initialization ordering",
+    "counterexample": "package a imports package b. If b.init writes to a global and a.init reads it after b.init completes, the read is guaranteed to see the write. No counterexample possible in compliant Go.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-007",
+    "tensor_equation": "∀package p: happens_before(completion(p.init), start(p.main))",
+    "section": "go.dev/ref/mem#inititialization — HB2: All init complete before main.main",
+    "counterexample": "If main.main() accesses a global set by an init function in another package, it is guaranteed to see the initialized value. No counterexample in compliant Go.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-008",
+    "tensor_equation": "∀goroutine g started by go_stmt S: ∃hb_edge: happens_before(evaluation(S), start(g))",
+    "section": "go.dev/ref/mem#goroutine-creation — HB3: Go statement before goroutine start",
+    "counterexample": "var a string; func f() { print(a) }; func hello() { a = \"hello, world\"; go f() } — the write to a happens-before the go statement, which happens-before f executes, so f must see a == \"hello, world\".",
+    "verification_method": "runtime",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-009",
+    "tensor_equation": "¬∃event e: happens_before(exit(g), e) for goroutine g",
+    "section": "go.dev/ref/mem#goroutine-destruction — HB4: Goroutine exit NOT synchronized",
+    "counterexample": "var a string; func hello() { go func() { a = \"hello\" }(); print(a) } — the write to a by the goroutine is NOT guaranteed to be observed by print(a). The goroutine's exit provides no happens-before edge.",
+    "verification_method": "model-check",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-010",
+    "tensor_equation": "∀channel c: (send(c, val) ∧ receive(c) returns val) ⇒ happens_before(send(c, val), completion(receive(c)))",
+    "section": "go.dev/ref/mem#channel-communication — HB6: Channel send happens-before corresponding receive",
+    "counterexample": "var c = make(chan int, 10); var a string; func f() { a = \"hello, world\"; c <- 0 }; func main() { go f(); <-c; print(a) } — without the channel, print(a) might see empty string. With it, the send happens-before the receive, so a is guaranteed initialized.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-011",
+    "tensor_equation": "∀channel c: happens_before(close(c), receive(c) that returns zero due to closed_channel)",
+    "section": "go.dev/ref/mem#channel-communication — HB7: Channel close happens-before zero-value receive",
+    "counterexample": "Replace c <- 0 with close(c) in GOMEM-010's example — same guarantee: close(c) happens-before the receive that returns zero, so writes before close are visible.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-012",
+    "tensor_equation": "∀unbuffered_channel c: happens_before(receive(c), completion(corresponding_send(c)))",
+    "section": "go.dev/ref/mem#channel-communication — HB8: Unbuffered channel receive before send completion",
+    "counterexample": "var c = make(chan int); var a string; func f() { a = \"hello, world\"; <-c }; func main() { go f(); c <- 0; print(a) } — on unbuffered channel, receive happens-before send completes, so the write to a in f happens-before the send returns, guaranteeing print(a) sees \"hello, world\".",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-013",
+    "tensor_equation": "∀buffered_channel c with capacity C, ∀k ≥ 0: happens_before(kth_receive(c), completion((k+C)th_send(c)))",
+    "section": "go.dev/ref/mem#channel-communication — HB9: kth receive before (k+C)th send on buffered channel",
+    "counterexample": "With make(chan int, 3), send #3 happens-before receive #1 returns. To prove: the kth receive takes a value placed by send #(k) or earlier, freeing a slot. Send #(k+3) blocks until that slot is freed, so the kth receive finishes before send #(k+3) writes.",
+    "verification_method": "model-check",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-014",
+    "tensor_equation": "∀mutex l, ∀n < m: happens_before(completion(nth Unlock(l)), return of mth Lock(l))",
+    "section": "go.dev/ref/mem#locks — HB10: Mutex Unlock#n happens-before Lock#(n+1)",
+    "counterexample": "var l sync.Mutex; var a string; func f() { a = \"hello, world\"; l.Unlock() }; func main() { l.Lock(); go f(); l.Lock(); print(a) } — Lock#2 happens after Unlock#1, so a is guaranteed initialized: prints \"hello, world\".",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-015",
+    "tensor_equation": "∀rwmutex l, ∀n: (happens_before(completion(nth Unlock(l)), return of RLock(l) that acquires after nth Unlock) ∧ happens_before(completion(RUnlock(l)), return of (n+1)th Lock(l)))",
+    "section": "go.dev/ref/mem#locks — HB11: RWMutex RLock/RUnlock ordering",
+    "counterexample": "var l sync.RWMutex; var a string; func f() { l.RLock(); _ = a; l.RUnlock() } — without proper preceding Unlock#n establishing the happens-before edge from the writer, the read of a in the RLock section may observe stale data.",
+    "verification_method": "model-check",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-016",
+    "tensor_equation": "∀mutex l: (TryLock(l) returns true) ⇒ synchronization_equivalent(Lock(l)) ∧ (TryLock(l) returns false) ⇒ no_synchronization_effect",
+    "section": "go.dev/ref/mem#locks — HB12: TryLock/TryRLock equivalence",
+    "counterexample": "var l sync.Mutex; var x int; goroutine A: x = 1; l.Unlock() — goroutine B: if l.TryLock() { print(x) } — if TryLock succeeds, it provides the same happens-before edge as Lock() would, so x=1 is visible. If TryLock fails, no guarantee.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-017",
+    "tensor_equation": "∀once sync.Once, ∀f func(): happens_before(completion(f() within once.Do(f)), return_of_all_calls_to_once.Do(f))",
+    "section": "go.dev/ref/mem#once — HB13: Once.Do synchronizes the function completion to all callers",
+    "counterexample": "var a string; var once sync.Once; setup() { a = \"hello, world\" }; doprint() { once.Do(setup); print(a) }; twoprint() { go doprint(); go doprint() } — both doprint calls see \"hello, world\" because once.Do(setup) completes setup's write to a before returning to any caller.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-018",
+    "tensor_equation": "∀atomically_loaded_var x: (load(x, A) == store(x, B, val)) ⇒ happens_before(store(x, B, val), load(x, A))",
+    "section": "go.dev/ref/mem#atomic-values — HB14: Atomic observation implies synchronization",
+    "counterexample": "var x atomic.Int64; var s string; goroutine A: s = \"hello\"; x.Store(1) — goroutine B: if x.Load() == 1 { print(s) } — because Load observes Store's value, the Store happens-before the Load, so s is guaranteed initialized.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-019",
+    "tensor_equation": "∀program P using sync/atomic: ∃sequentially_consistent_total_order T of all atomic_ops_in_P: T is consistent with sequencing_and_values",
+    "section": "go.dev/ref/mem#atomic-values — HB15: Atomic operations are sequentially consistent",
+    "counterexample": "var a, b atomic.Int64; goroutine A: a.Store(1); b.Store(1); goroutine B: if b.Load() == 1 { print(a.Load()) } — if B sees b==1, it must see a==1 because atomic ops execute in a sequentially consistent total order across all goroutines.",
+    "verification_method": "model-check",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-020",
+    "tensor_equation": "∀finalizer f, object x: happens_before(runtime.SetFinalizer(x, f), f(x))",
+    "section": "go.dev/ref/mem#finalizers — HB16: SetFinalizer before finalization call",
+    "counterexample": "var a string; type T struct{}; runtime.SetFinalizer(&T{}, func(t *T) { print(a) }) — if a is set after SetFinalizer but before GC runs, the finalizer is NOT guaranteed to see the later write to a, only writes that happened before SetFinalizer.",
+    "verification_method": "model-check",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-021",
+    "tensor_equation": "∀sync.WaitGroup wg: happens_before(wg.Add(N), goroutine that calls wg.Done()) ∧ happens_before(completion(Done()), return_of_wg.Wait())",
+    "section": "go.dev/ref/mem#additional-mechanisms — HB17: WaitGroup synchronization via package documentation",
+    "counterexample": "var wg sync.WaitGroup; var a string; wg.Add(1); go func() { a = \"hello\"; wg.Done() }(); wg.Wait(); print(a) — wg.Add(1) happens-before the goroutine starts; wg.Done() happens-before wg.Wait() returns; so print(a) must see \"hello\".",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-022",
+    "tensor_equation": "∀program P: P contains double_checked_locking ⇒ ¬∃hb_guarantee(writes_inside_conditional, reads_after_check)",
+    "section": "go.dev/ref/mem#incorrect-synchronization — IS2: Double-checked locking is invalid",
+    "counterexample": "var a string; var done bool; func setup() { a = \"hello, world\"; done = true }; func doprint() { if !done { once.Do(setup) }; print(a) } — even if done == true, the write to a is NOT guaranteed to be visible to doprint() because done is a plain (non-synchronizing) variable.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-023",
+    "tensor_equation": "∀spin_loop L that reads non-synchronizing_data: (¬∃hb_edge from writer to reader(L)) ⇒ ¬guaranteed_termination(L)",
+    "section": "go.dev/ref/mem#incorrect-synchronization — IS3: Busy-waiting without synchronization is invalid",
+    "counterexample": "var a string; var done bool; func setup() { a = \"hello\"; done = true }; func main() { go setup(); for !done {}; print(a) } — the loop is NOT guaranteed to terminate because there is no synchronization between setup() and main(). The compiler may even delete the loop body entirely.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-024",
+    "tensor_equation": "∀pointer p, field f: (load(p) == addr ∧ ¬∃sync between store(addr.f) and load(p)) ⇒ ¬hb_guarantee(store(addr.f), load(addr.f, deref(load(p))))",
+    "section": "go.dev/ref/mem#incorrect-synchronization — IS4: Pointer observation does not guarantee content observation",
+    "counterexample": "type T struct { msg string }; var g *T; func setup() { t := new(T); t.msg = \"hello\"; g = t }; func main() { go setup(); for g == nil {}; print(g.msg) } — even when main observes g != nil, g.msg may still be empty because there is no synchronization.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-025",
+    "tensor_equation": "∀compiler C, program P: (¬∃write w in P) ⇒ (output(C(P)) must not contain w)",
+    "section": "go.dev/ref/mem#incorrect-compilation — C1: Compiler must not introduce writes",
+    "counterexample": "// Original: if cond { *p = 1 }\n// INVALID rewrite: *p = 2; if !cond { *p = 1 }\n// A compiler must NOT introduce write *p=2 that was not in the original program.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-026",
+    "tensor_equation": "∀compiler C, conditional branch B containing write w: C must not move w outside B unless the condition B provably holds",
+    "section": "go.dev/ref/mem#incorrect-compilation — C4: Compiler must not move writes out of conditionals",
+    "counterexample": "// *p = 1; if cond { *p = 2 }\n// INVALID compiler rewrite: *p = 2; if !cond { *p = 1 }\n// If cond is false and another goroutine reads *p, original allows only {prior, 1}, rewrite allows 2.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-027",
+    "tensor_equation": "∀compiler C: C must not move memory accesses across loop that might not terminate",
+    "section": "go.dev/ref/mem#incorrect-compilation — C5: Compiler must not assume loops terminate",
+    "counterexample": "// n := 0; for e := list; e != nil; e = e.next { n++ }; i := *p\n// INVALID to move *p before loop if list may be cyclic (infinite loop).",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-028",
+    "tensor_equation": "∀compiler C: C must not move memory accesses across function call unless C provably knows f always returns",
+    "section": "go.dev/ref/mem#incorrect-compilation — C6: Compiler must not assume functions always return",
+    "counterexample": "// f(); i := *p\n// INVALID to move *p before f() if f() may not return (infinite loop, panic, etc.).",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-029",
+    "tensor_equation": "∀compiler C: (C loads var i from *p, then discards i) ⇒ C must not reload i from *p; C must reuse the previously loaded value",
+    "section": "go.dev/ref/mem#incorrect-compilation — C7: No reloading from shared memory after discard",
+    "counterexample": "// i := *p; if i < 0 || i >= len(funcs) { panic(...) }; ...complex code... funcs[i]()\n// Compiler MUST NOT reload i = *p for funcs[i]() because *p may have changed concurrently.\n// Spilling i to stack is fine; re-reading *p is invalid.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-030",
+    "tensor_equation": "∀compiler C, write w = *p = expr: C must not use *p as temporary storage before w completes",
+    "section": "go.dev/ref/mem#incorrect-compilation — C8: No using destination memory as temporary storage",
+    "counterexample": "// Original: *p = i + *p/2\n// INVALID rewrite: *p /= 2; *p += i\n// If i = *p = 2, original produces *p = 3; rewrite produces *p = 1 then *p = 3.\n// A racing thread could observe 1 with the rewrite, which was not a value in the original.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-031",
+    "tensor_equation": "∀sizeof(T) > machine_word, ∀read r of T: implement(r) = read_individual_fields_in_any_order(T)",
+    "section": "go.dev/ref/mem#implementation-restrictions-for-programs-containing-data-races — Composite type access order is unspecified",
+    "counterexample": "type S struct { a int; b int }; goroutine A: s = S{1, 2}; goroutine B: x := s.a; y := s.b — if goroutine A writes concurrently, goroutine B may observe any interleaving of sub-value writes (a updated but not b, etc.). For word-sized reads the single-word rule applies.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-032",
+    "tensor_equation": "∀read r of single-word location x: W(r) must be a write w such that ¬happens_before(r, w) ∧ ¬∃write w': happens_before(w, w') ∧ happens_before(w', r)",
+    "section": "go.dev/ref/mem#implementation-restrictions-for-programs-containing-data-races — Single-word read observation",
+    "counterexample": "var x int; goroutine A: x = 1; goroutine B: x = 2; goroutine C: print(x) — with no synchronization, C must observe either 1, 2, or the initial value (0). It must NOT observe some 'out-of-thin-air' value.",
+    "verification_method": "model-check",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-033",
+    "tensor_equation": "∀read r of multi-word location x: ¬(guarantee(r observes single_coherent_write)) — only encouraged, not required",
+    "section": "go.dev/ref/mem#implementation-restrictions-for-programs-containing-data-races — Multi-word reads (performance exception)",
+    "counterexample": "type P struct { ptr unsafe.Pointer; len int }; var p P; goroutine A: p = P{&buf, 100}; goroutine B: slice := p; _ = slice.ptr[slice.len-1] — if B observes len=100 but ptr still pointing at old buffer, this causes arbitrary memory corruption. For interface, map, slice, string values this is dangerous.",
+    "verification_method": "runtime",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-034",
+    "tensor_equation": "∀read r concurrent with write w on location x: (W(r) = w) ⇒ ¬∃hb_edge(w', r): happens_before(w', r) for any subsequent read r' that happens-after r but not-after w",
+    "section": "go.dev/ref/mem#incorrect-synchronization — IS1: Concurrent read may observe concurrent write but seq-cst does NOT follow",
+    "counterexample": "var a, b int; func f() { a = 1; b = 2 }; func g() { print(b); print(a) }; func main() { go f(); g() } — it is possible for g to print 2 then 0 (observes b = 2 from f but a = 0). Observing a concurrent write to b does NOT imply the write to a is visible.",
+    "verification_method": "model-check",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-035",
+    "tensor_equation": "∀cond *sync.Cond: happens_before(Broadcast/Signal(cond), return of Wait(cond) awakened by it)",
+    "section": "go.dev/ref/mem#additional-mechanisms — HB17: sync.Cond synchronization",
+    "counterexample": "var mu sync.Mutex; var cond = sync.NewCond(&mu); var ready bool; goroutine A: mu.Lock(); ready = true; cond.Broadcast(); mu.Unlock(); goroutine B: mu.Lock(); for !ready { cond.Wait() }; mu.Unlock() — Broadcast happens-before Wait returns, so ready=true is visible.",
+    "verification_method": "static",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  },
+  {
+    "id": "GOMEM-036",
+    "tensor_equation": "∀sync.Map m: happens_before(Store(m, k, v), Load(m, k) that returns v) when no concurrent mutation",
+    "section": "go.dev/ref/mem#additional-mechanisms — HB17: sync.Map synchronization",
+    "counterexample": "var m sync.Map; var a string; goroutine A: a = \"hello\"; m.Store(\"key\", 1); goroutine B: m.Load(\"key\"); print(a) — if B observes the stored value, the Store happens-before Load, and the write to a (which happened before Store) must be visible.",
+    "verification_method": "runtime",
+    "source": "Go Memory Model (go.dev/ref/mem)"
+  }
+]

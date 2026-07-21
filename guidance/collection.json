@@ -1,0 +1,614 @@
+[
+  {
+    "id": "AX-ORACLE-APPLE_PLATFORM-008",
+    "title": "2.3 Protocols \u2014 The Interface Contract (tensor invariant)",
+    "tensor_equation": "**Invariant:** \u2200protocol P: the set of requirements = the minimum contract. Protocol conformance is checked at compile time. No runtime type-checking for protocols (unlike Go's interface conversion which can panic).",
+    "source": "oracle:apple-platform-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [unclassified]: The load-bearing clause is a definitional identity between two undefined terms \u2014 a protocol's requirements ARE its contract, so no protocol declaration can make `requirements = minimum contract` false; 'minimum' is never given a criterion. The remaining clauses are descriptive trivia about the Swift compiler, not constraints on any artifact under audit: there is no program state, input, or execution you could exhibit and declare in violation of this axiom. (The only way to attack it is as a factual claim about the language \u2014 Swift does have runtime protocol checks via `as? P` and @objc optional requirements resolved by respondsToSelector \u2014 but that refutes the sentence, it is not a program violating an invariant.)",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-APPLE_PLATFORM-010",
+    "title": "2.5 Property Wrappers \u2014 The Attribute Contract (tensor invariant)",
+    "tensor_equation": "**Invariant:** \u2200property wrapper W: W.wrappedValue access goes through W's get/set. The compiler synthesizes the storage. The property wrapper's semantics are compile-time guaranteed.",
+    "source": "oracle:apple-platform-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [4 (definitional identity / classification, not constraint)]: This restates the Swift compiler's own desugaring rule, not a property any program can breach. Every syntactic form of access to a wrapped property (`foo`, `_foo.wrappedValue`, `$foo`) is by construction routed through the wrapper's accessors \u2014 there is no user-writable Swift program in which wrappedValue access bypasses get/set. 'The compiler synthesizes the storage' is a fact about the toolchain, and 'semantics are compile-time guaranteed' is a classification with no assertion that any checkable condition holds. No input, state, or program can make it false.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-DATA_QUALITY-019",
+    "title": "8. Model Evaluation (Held-Out Test Set, Slice-Based Evaluation, Fairness) (tensor invariant)",
+    "tensor_equation": "- `pkg/evalmetrics` \u2014 BLEU, ROUGE, METEOR, Perplexity, accuracy, precision, recall, F1 implementations. Invariant: `\u2200metric m: m(refs, hyps) returns [0, 1] for normalized metrics \u2227 m is deterministic for same input`. BLEU score must not panic on input length mismatch. - `pkg/dspy` \u2014 DSPy signatures are evaluated on held-out test sets. Invariant: `\u2200train_example, test_example: no overlap in input/output pairs`. DSPy optimizers must not leak test data into few-shot examples. - `pkg/grpo` \u2014 GRPO uses a reward model to compare outputs. Invariant: `\u2200batch: reward_model is evaluated on held-out prompts (not training prompts)`. Reward model overfitting = false signal. - `pkg/rlhfdpo` \u2014 Preference data is split into train/test. Invariant: `\u2200preference p in test set: p is not in training set \u2227 p was not used to compute reward model`. Leakage in preference data is a P0 bug. - `pkg/modelmerging` \u2014 Model merging evaluation must be per-task. Invariant: `\u2200task t: merged_model_metric(t) \u2265 min(source_model_metric(t)) \u2228 tradeoff is documented`. Merging should not silently degrade performance on any task. - `pkg/sampler` \u2014 Sampling strategies affect output quality. Invariant: `\u2200sampler S: S.eval_metric \u2265 baseline_metric within \u03b5` (sampling not degrading quality). Temperature, top-k, top-p, and min-p must be evaluated on held-out data. - `pkg/medusa` \u2014 Medusa acceptance rate is a key metric. Invariant: `\u2200model: acceptance_rate \u2265 \u03b1_threshold` (otherwise draft model is ineffective). Evaluation must be slice-based: per-length bucket, per-domain. - `pkg/federatedsgd` \u2014 Federated model evaluation must be per-client. Invariant: `\u2200client c: local_model_metric(c) \u2265 global_model_metric(c) - \u03b5` (federated averaging should not hurt any client significantly). No client should be silently degraded. - `pkg/flashkmeans` \u2014 Clustering evaluation: inertia, silhouette score, Davies-Bouldin index. Invariant: `\u2200iteration i: inertia(i) decreasing \u2227 silhouette_score \u2265 baseline`. Evaluation must be per-cluster. - `pkg/neuralnet` \u2014 Per-layer activation statistics. Invariant: `\u2200layer l: mean_activation(l) \u2248 0 \u2227 std_activation(l) \u2248 1` (healthy layer). Dead neurons: `P(activation(l) > 0) > \u03c4_dead`.",
+    "source": "oracle:data-quality-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "Not an invariant: the 'tensor_equation' is a verbatim dump of ten prose bullets covering ten different packages, interleaved with non-formal commentary ('BLEU score must not panic on input length mismatch', 'Reward model overfitting = false signal', 'Leakage in preference data is a P0 bug'). It bundles ~15 distinct invariants plus prose into one axiom, so it cannot be checked or gated as a single equation. Several embedded claims are also hedged in the source ('\u2200task t: merged_model_metric(t) \u2265 min(source_model_metric(t)) \u2228 tradeoff is documented' \u2014 the disjunct makes it non-binding; '\u2248 0 \u2227 \u2248 1' has no tolerance).",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-FOWLER-003",
+    "title": "2. Code Smells \u2014 \"When to Refactor\" (tensor invariant)",
+    "tensor_equation": "| **Duplicated Code** | \u2200logic block B: B appears exactly once | Copy-paste detection (PMD, SonarQube, `jscpd`) | | **Long Method** | \u2200method: fits on one screen | `golangci-lint` `funlen`, `eslint` `max-lines-per-function` | | **Large Class** | \u2200class: single responsibility | `golangci-lint` `gocritic`, cohesion metrics (LCOM) | | **Long Parameter List** | \u2200function: \u2264 4 parameters | `golangci-lint` `revive` `max-params` | | **Divergent Change** | \u2200concern: lives in exactly one module | Change frequency per file (git history) | | **Shotgun Surgery** | \u2200change: touches \u2264 3 files | Change coupling (files that always change together) | | **Feature Envy** | \u2200method: accesses more foreign data than own data | Static analysis: count field accesses by owner | | **Data Clumps** | \u2200data group: fields that always appear together are one type | Find parameter groups that repeat across signatures | | **Primitive Obsession** | \u2200domain concept: has its own named type | Find `string`/`int` used where a newtype belongs | | **Switch Statements** | \u2200type dispatch: polymorphism over switch | Find `switch` on type code (replace with interface) | | **Comments** | \u2200comment: explains what, not why \u2014 what should be the code | `grep` for \"// \" that explain mechanics | | **Lazy Element** | \u2200abstraction: justifies its existence | Find classes/functions that are pass-through only |",
+    "source": "oracle:fowler-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "This is not a tensor equation \u2014 it is a raw pipe-delimited dump of the entire smells table, including the tooling column ('Copy-paste detection (PMD, SonarQube, jscpd)', 'golangci-lint funlen', etc.), which is detection guidance, not an invariant. It also conflates twelve independent invariants into one axiom, each of which is separately extracted as AX-ORACLE-FOWLER-004 through -015; those row-level entries supersede this one. Extraction artifact: the table rows should not have been merged into a single equation field.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-FOWLER-015",
+    "title": "2. Code Smells \u2014 \"When to Refactor\" (table invariant)",
+    "tensor_equation": "\u2200abstraction: justifies its existence",
+    "source": "oracle:fowler-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [6 (unbound predicate); also 3 (unmeasurable terms)]: 'justifies' is an unbound predicate with no definition, no units, no measurement procedure and no value source. There is no state of any codebase that establishes 'this abstraction does not justify its existence' as a checkable fact \u2014 any candidate counterexample (single-caller wrapper, pass-through interface) can be asserted to be justified by readability, testability, or anticipated reuse, and the axiom supplies no criterion to adjudicate. Nothing is forbidden.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-FRAMEWORK-001",
+    "title": "How to use this (tensor invariant)",
+    "tensor_equation": "4. **Write the invariant.** \u2200x: expr.",
+    "source": "oracle:framework.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "Not an invariant: the captured text is a process instruction telling the reader to write an invariant, and \"\u2200x: expr\" is a syntactic placeholder with no predicate, no bound, and no subject. It is prose restated with zero verifiable content. framework.md's actual invariant material lives in the Lens tables (e.g. Rate: \"\u2264 N events per window\"), none of which this axiom encodes.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-KERNIGHAN_PLAUGER-016",
+    "title": "8. Notation (invariant)",
+    "tensor_equation": "\u2200problem P: express P in the notation closest to P's domain, not the implementation language\n\u2200notation N: N is judged by how clearly it expresses the invariant, not by how familiar it is",
+    "source": "oracle:kernighan-plaughter-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [3 (unmeasurable terms); second clause also 1 (classification/meta-statement, not constraint)]: 'closest to P's domain' defines no distance metric over notations and no procedure for computing it, so no encoding can be shown to be not-closest. The second clause is not a constraint on any program, system, or artifact at all \u2014 it is a statement about how an evaluator ought to form an opinion. No input, state, execution, or codebase can make either clause false; the axiom forbids no observable condition.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-KERNIGHAN_PLAUGER-018",
+    "title": "8. Notation (tensor invariant)",
+    "tensor_equation": "- **Invariants:** Write the tensor equation: `\u2200x: property(x)`. The equation IS the invariant.",
+    "source": "oracle:kernighan-plaughter-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "Not an invariant, and no formal content. This is methodological advice about how to record invariants, mis-extracted from an enforcement-pattern bullet list. The `\u2200x: property(x)` inside it is a placeholder schema with uninterpreted x and property \u2014 it constrains nothing and cannot be violated or gated by a test. \u00a78's actual invariant is the block captured by AX-ORACLE-KERNIGHAN_PLAUGER-016.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-KERNIGHAN_PLAUGER-019",
+    "title": "8. Notation (tensor invariant)",
+    "tensor_equation": "- `pkg/tokenrouter` \u2014 the rate-limit equation `\u2200k,t: RequestBuckets[k][t] \u2264 RPM/60` IS the specification. The Go code implements the check. - `pkg/ggrind` \u2014 the pipeline `prompts \u2192 reviewers \u2192 findings \u2192 triage \u2192 report` IS the specification. Each stage is a goroutine pool.",
+    "source": "oracle:kernighan-plaughter-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "Not a Kernighan & Plauger principle and not an invariant of this source. It is two orbit-codebase illustrations of \u00a78's notation principle, concatenated. The embedded `\u2200k,t: RequestBuckets[k][t] \u2264 RPM/60` is orbit's own tokenrouter rate-limit equation being cited as an example; extracting it as a Kernighan-sourced axiom attributes an orbit implementation detail to the 1974 book. \u00a78's actual invariant is AX-ORACLE-KERNIGHAN_PLAUGER-016.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-LAMPORT_TLA-004",
+    "title": "5. Refinement \u2014 \"Implementation Implies Specification\" (invariant)",
+    "tensor_equation": "I refines S  \u21d4  \u2200behavior b: b \u2208 behaviors(I) \u2192 b \u2208 behaviors(S)",
+    "source": "oracle:lamport-tla-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [4 (definitional identity)]: This is the definition of the refinement relation, stated as a biconditional. 'Refines' has no meaning independent of the right-hand side, so any candidate counterexample \u2014 an I that 'refines' S yet has a behavior outside behaviors(S) \u2014 is ruled out by stipulation rather than by any fact about a system. Nothing about any implementation, execution, or spec can make the equivalence false; it constrains no artifact. (A sound version would assert of a specific I and S that the inclusion holds.)",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-OUSTERHOUT-005",
+    "title": "3. Strategic vs. Tactical Programming (invariant)",
+    "tensor_equation": "\u2200design investment I: cost(I) is paid now, benefit(I) accrues over time\n\u2200module: if cost(fix_now) < cost(fix_later) + cost(working_around_the_bug), fix now",
+    "source": "oracle:ousterhout-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [unclassified]: cost() and benefit() are given no units, no measurement procedure and no source of values, so the antecedent of the implication can never be established or refuted for any concrete module \u2014 and an implication whose antecedent is undecidable cannot be shown false. The consequent 'fix now' names a human scheduling decision with no deadline, so even a granted antecedent has no observable violation state. Clause 1 ('cost paid now, benefit accrues over time') is a definitional restatement of what an investment is. No input, program state, or execution can make this equation false.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-OUSTERHOUT-007",
+    "title": "4. General-Purpose Modules are Deeper (invariant)",
+    "tensor_equation": "\u2200module M\u2081 (specific), M\u2082 (general): interface(M\u2081) \u2248 interface(M\u2082) \u2227 functionality(M\u2081) \u2282 functionality(M\u2082)\n\u2192 depth(M\u2081) < depth(M\u2082)",
+    "source": "oracle:ousterhout-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [4 (definitional identity); also 3 (unmeasurable terms)]: Depth is defined in the source framework as functionality divided by interface size. With the antecedent fixing interfaces as equivalent and functionality as a strict superset, the consequent follows by arithmetic from the definition of depth \u2014 no module pair can satisfy the premise and violate the conclusion. Compounding this, '\u2248' over interfaces and the magnitudes of depth() and functionality() have no units or measurement procedure, so the antecedent cannot be independently established either. Nothing is forbidden.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-OUSTERHOUT-011",
+    "title": "5. Comments Should Describe Things That Aren't Obvious (tensor invariant)",
+    "tensor_equation": "- `pkg/tokenrouter` \u2014 rate-limit check has a comment: `// \u2200k,t: RequestBuckets[k][t] \u2264 RPM/60`",
+    "source": "oracle:ousterhout-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "Not an invariant: the equation field is a markdown example bullet describing that a code comment exists in pkg/tokenrouter, not a quantified property of comments. Any formal content in it (the RPM/60 bucket bound) belongs to tokenrouter's rate-limit axiom, not to Ousterhout's comment principle \u2014 so it is also misattributed to \u00a75. The real \u00a75 invariant is already AX-ORACLE-OUSTERHOUT-009.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-OUSTERHOUT-017",
+    "title": "8. Design it Twice (invariant)",
+    "tensor_equation": "\u2200design D: \u2203alternative D' with different tradeoffs\n\u2200design decision: the choice between D and D' is explicit and documented",
+    "source": "oracle:ousterhout-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [unclassified]: Clause 1 is an unfalsifiable existential: an alternative design with different tradeoffs always exists (you can always name one), and refuting it would require proving no alternative exists for some design \u2014 impossible. Clause 2 quantifies over 'design decisions', a set that is nowhere defined and is self-selected by the team, so any codebase satisfies it by holding that it made no design decisions; 'explicit and documented' likewise has no criterion (a code comment? an ADR? a commit message?). No artifact can be exhibited as a violation.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-OWICKI_GRIES-010",
+    "title": "What the Go race detector DOES NOT catch: (tensor invariant)",
+    "tensor_equation": "\u2200pattern: \u00actracked_by_tsan(pattern) \u21d2 races in pattern NOT detected",
+    "source": "oracle:owicki-gries-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [4 (definitional identity)]: The consequent follows from the antecedent by construction: detection *is* what tracking produces, so 'not tracked' entails 'not detected' by the meaning of the two undefined predicates. To falsify it one would need a pattern TSan does not track yet still reports races in \u2014 which is self-contradictory, since any report would constitute tracking. No execution, program, or TSan configuration can make it false; it restates the definition of instrumentation coverage.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-OWICKI_GRIES-011",
+    "title": "What the Go race detector DOES NOT catch: (tensor invariant)",
+    "tensor_equation": "\u2200race: goroutine_count > 8192 \u21d2 race may NOT be detected",
+    "source": "oracle:owicki-gries-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [5 (unfalsifiable \u2014 modal/existential form admits every outcome)]: The consequent is a bare modal possibility ('may NOT be detected'). Both outcomes confirm it: if the detector misses the race, the possibility is realised; if the detector finds it, the claim that it *may* have been missed is untouched. No execution, no goroutine count, no detector build can produce an observation inconsistent with 'may not'. Turning it into a real invariant requires a definite claim (e.g. 'races involving goroutines beyond the 8192nd are never reported'), which this equation deliberately avoids.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-OWICKI_GRIES-013",
+    "title": "How TLA+ maps to Owicki-Gries: (tensor invariant)",
+    "tensor_equation": "| Proof obligation: \u2200 assertions \u00d7 \u2200 statements | TLC exhaustively explores all state-action pairs |",
+    "source": "oracle:owicki-gries-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "The 'tensor_equation' is a raw markdown table row with pipe delimiters, not an invariant. It is a conceptual correspondence between an O-G proof obligation and TLC's behavior \u2014 there is no quantified predicate, no antecedent/consequent, nothing checkable. This is prose (a glossary mapping) reformatted as an equation, with no formal content.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-OWICKI_GRIES-026",
+    "title": "Step 1: Declare the invariant (tensor invariant)",
+    "tensor_equation": "\u2200shared_state S: invariant(S)",
+    "source": "oracle:owicki-gries-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "This is a template placeholder, not an invariant. 'invariant(S)' is an unbound schematic predicate the reader is instructed to fill in \u2014 the source's very next line tells you to go write a real tensor equation. As stated it is vacuous: it asserts nothing checkable and cannot be falsified, so it cannot back a TestAX gate. Ingesting a fill-in-the-blank template line as an axiom misrepresents Section 9's purpose.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-SICP-009",
+    "title": "5. Metacircular Evaluator \u2014 \"Programs that Reason About Programs\" (invariant)",
+    "tensor_equation": "\u2200language L defined by eval: \u2200expression e in L, eval(e) = meaning(e)\n\u2200program-as-data: the program P is a value that can be inspected, transformed, and executed",
+    "source": "oracle:sicp-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [4 (definitional identity), with clause 2 also matching 2 (self-selected set)]: Clause 1 is a definitional identity: the language L is stipulated to be 'defined by eval', so meaning() has no source other than eval itself. eval(e) = meaning(e) is then true by construction \u2014 there is no independent semantics to disagree with it, so no interpreter, expression, or execution can make it false. Clause 2 quantifies over 'program-as-data', i.e. only over programs that are already values, so it asserts of homoiconic programs that they are homoiconic; a language without program-as-data satisfies it with an empty domain. Neither clause forbids any implementation behavior.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-TAPL-004",
+    "title": "5. Parametric Polymorphism \u2014 \"Generics / Type Parameters\" (tensor invariant)",
+    "tensor_equation": "`map : \u2200A,B. (A \u2192 B) \u2192 List A \u2192 List B` \u2014 the same `map` function works for any A and B.",
+    "source": "oracle:tapl-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [4 (definitional identity), with 7 (a typing judgment stated with no premises)]: This states a type schema for a fixed mathematical object and then restates parametricity as prose. There is no antecedent, no obligation on any system, and no quantification over anything a program could get wrong: `map` at that type works for all A and B by the definition of the polymorphic term, so no input, state, or execution refutes it. A language whose map is monomorphic does not violate the axiom \u2014 it simply has a different function, since the axiom names its own subject. It is a typing fact presented as an invariant.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-WEB_PLATFORM-005",
+    "title": "2. Middleware Contracts (tensor invariant)",
+    "tensor_equation": "| **Auth** | \u2200request R: if R lacks valid credentials, M returns 401 Unauthorized (or 403 Forbidden) and does NOT call next | Leaked authenticated endpoint | | **Logging** | \u2200request R: M logs (method, path, status, duration) after next returns. M must not block on logger. | Synchronous disk I/O in logging middleware blocks the event loop | | **CORS** | \u2200cross-origin R: M sets Access-Control-Allow-Origin before next, or returns 204 for preflight OPTIONS | Cross-origin requests fail without CORS headers | | **Rate limit** | \u2200R: if R's client exceeds limit, M returns 429 Retry-After and does NOT call next | Downstream handler runs on a request that should be rejected | | **Error recovery** | \u2200panic in handler or next: M catches it, returns 500, logs stack trace | Uncaught panic kills the process | | **Request ID** | \u2200R: M assigns unique ID (uuid, traceparent) before next, adds it to response headers | Two requests share the same ID, or ID is missing in logs |",
+    "source": "oracle:web-platform-oracle.md",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "Not an invariant \u2014 it is the raw markdown table (lines 115-120) flattened into a single string, complete with '|' cell delimiters and the 'Violation' column ('Leaked authenticated endpoint', 'Uncaught panic kills the process', ...), which is consequence prose, not part of any invariant. It aggregates six distinct invariants over six different middleware kinds into one 'equation' with no single quantifier scope; those six are already correctly split out as AX-ORACLE-WEB_PLATFORM-006 through -011.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-DB-005",
+    "title": "CAP Theorem: impossibility of C+A+P",
+    "tensor_equation": "\u2200 distributed system D: \u00ac(consistent(D) \u2227 available(D) \u2227 partition_tolerant(D))",
+    "source": "oracle:database-systems",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "The equation is the popular '2 of 3' misquote and is false as universally quantified. Three concrete counterexamples: (1) a single-node database is trivially consistent, available, and vacuously partition-tolerant \u2014 '\u2200 distributed system D' with no non-degeneracy premise is refuted immediately; (2) by Gilbert & Lynch Theorem 2, a partially-synchronous system (the real-world model) delivers linearizability AND availability AND continues to run across partitions in every partition-free execution, so C \u2227 A \u2227 P holds during the overwhelming majority of its lifetime; (3) the theorem is a statement about behaviour *during* a partition, not a static property of a system, so 'partition_tolerant(D)' as a boolean conjunct has no counterpart in the source. Fidelity failures: 'consistent' must be linearizability (not ACID-C, not sequential consistency), 'available' must be termination of every request at every non-failing node, and the impossibility holds only in the asynchronous model with unbounded message loss/delay. All three definitional premises are stripped, and the model assumption is absent.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-DB-015",
+    "title": "Query optimization: System R dynamic programming for join ordering",
+    "tensor_equation": "\u2200 query Q: plan_dp(Q) = optimal_left_deep_plan(Q) within the cost model's search space",
+    "source": "oracle:database-systems",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: 'plan_dp(Q) = optimal_left_deep_plan(Q) within the cost model's search space' is circular and cannot be falsified as written. The hedge 'within the cost model's search space' defines the comparison set as whatever the algorithm enumerates, so the claim reduces to 'the DP algorithm returns the cheapest plan it considered' \u2014 true by construction of any argmin, forbidding nothing and gating nothing. TEST 1 therefore fails: no schedule, plan, or query can violate it. Removing the hedge does not rescue it \u2014 the resulting claim ('DP yields the optimal left-deep plan') is then false, because System R's Cartesian-product-deferral heuristic prunes left-deep plans that begin with an unpredicated join, and for star-shaped queries where the cheapest left-deep order requires an early cross product the algorithm provably misses the optimum. To be ingestable the axiom needs stated premises: enumeration over all left-deep orders with no Cartesian-product pruning, plus a cost model satisfying the principle of optimality (cost of a join depends only on the cardinality and sort order of its inputs) \u2014 the latter is exactly why Selinger et al. had to carry interesting orders, and without it DP is not optimal even over its own space.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-STD-010",
+    "title": "ISO 8000: Portability \u2014 data uses known formats and encodings",
+    "tensor_equation": "\u2200d \u2208 DataElements: syntax(d) \u2208 Known_Formats \u2227 semantic_encoding(d) \u2208 Known_Encodings",
+    "source": "oracle:standards",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: 'Known_Formats' and 'Known_Encodings' are unbound sets with no membership criterion given anywhere in the axiom or the citation, so no concrete data element can be exhibited that fails the test \u2014 every format is 'known' to someone. Additionally: (a) no clause is cited at all ('Key Concepts / Portability' is marketing/overview language, not a clause); the correct reference is ISO 8000-110:2021 (or :2009); (b) ISO 8000-110's requirements are conditional on a master data MESSAGE claiming conformance and require semantic encoding by reference to an identified data dictionary \u2014 the axiom's unconditional \u2200d \u2208 DataElements drops that scoping; (c) 'portable data' is a defined term in ISO 8000-2, not a requirement.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-STD-020",
+    "title": "MISRA C: Mandatory rule compliance \u2014 zero violations",
+    "tensor_equation": "\u2200r \u2208 MandatoryRules: violations(r, codebase) = 0",
+    "source": "oracle:standards",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "WRONG CLAUSE. The requirement content ('zero violations of Mandatory rules, no deviations') is faithful in degree, but 'MISRA C:2012, Section 4.2' does not contain it. Section 5.2 is 'Categories' (mandatory/required/advisory); 4.2 is not the guideline-classification clause \u2014 note that '4.2' in MISRA C:2012 is a RULE identifier (Rule 4.2, an Advisory rule about trigraphs), which is likely the source of the confusion, and citing an Advisory rule's number as the authority for a Mandatory-rule obligation inverts the very distinction the axiom is about. Correct references: MISRA C:2012 \u00a75.2 for the categories, and MISRA Compliance:2020 for the deviation and compliance-claim rules.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-STD-021",
+    "title": "MISRA C: Decidable rules \u2014 static analysis produces definitive pass/fail",
+    "tensor_equation": "\u2200r \u2208 DecidableRules: static_analysis(r) \u2208 {PASS, FAIL}",
+    "source": "oracle:standards",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: as written the axiom has no falsifier. 'static_analysis(r)' names no analyser, no codebase and no conformance criterion, and its codomain is asserted to be {PASS, FAIL} \u2014 there is no implementation one can exhibit that violates it, because the axiom fixes nothing about who runs the analysis or on what. Beyond vacuity, the fidelity is wrong on two counts: (1) MISRA's decidability is a THEORETICAL property of the rule (an algorithm exists in principle), not a guarantee that any real tool terminates with a definitive verdict \u2014 real analysers routinely emit 'possible violation'/'caution' on decidable rules; (2) the citation 'Section 6.8.9' is not a valid MISRA C:2012 section \u2014 the decidability clause is Section 5.3, and analysis scope (STU vs System, which changes what is decidable in practice) is Section 5.4. The STU/System qualifier is dropped entirely.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-DIST-001",
+    "title": "FLP: Asynchronous consensus is impossible with even one crash",
+    "tensor_equation": "\u2200P \u2208 DeterministicAsync: \u2203\u03c3 \u2208 AdmissibleRuns(P): (|{p: \u00acInfiniteSteps(p,\u03c3)}| \u2264 1) \u2227 (\u2200p: \u00acDecided(p,\u03c3))",
+    "source": "oracle:distributed-systems",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "The premise was dropped, and the result is a FALSE universal rather than a vacuous one. FLP quantifies over protocols that are PARTIALLY CORRECT consensus protocols \u2014 satisfying agreement and non-triviality/validity (both decision values are reachable) \u2014 not over all deterministic asynchronous protocols. As written, '\u2200P \u2208 DeterministicAsync' includes the trivial protocol in which every process immediately decides 0; for that P every admissible run has all processes decided, so no run \u03c3 satisfies '\u2200p: \u00acDecided(p,\u03c3)' and the axiom is falsified by a two-line counterexample. Bivalence \u2014 hence the whole proof \u2014 requires the validity condition that was omitted. Also, FLP's fault model is a single crash among processes that are otherwise required to take infinitely many steps, and the axiom's 'AdmissibleRuns' carries that meaning only implicitly.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-NIST-SP800-56A-004",
+    "title": "Shared Secret Derivation Must Use Approved KDF with All Required Context",
+    "tensor_equation": "\u2200derived_key K: K = KDF(Z, L, salt, Context) where Context = (id_initiator || id_responder || alg_id || purpose). \u2200K1 \u2260 K2: derived from different Z or different Context.",
+    "source": "NIST SP 800-56A Rev. 3 / SP 800-56C / SP 800-108",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "HARDENING of a recommended FixedInfo layout into a MUST-equal formula, with a 'purpose' subfield and a 'salt' argument the cited section does not require. Second clause ('for all K1 != K2: derived from different Z or different Context') is TAUTOLOGICAL - it is the contrapositive of function determinism and cannot be falsified.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-NIST-SP800-90A-001",
+    "title": "DRBG Health Tests \u2014 Continuous Random Number Generator Test",
+    "tensor_equation": "\u2200DRBG D, \u2200generate_call t: if output_block(D, t) = output_block(D, t-1) then D.state = ERROR \u2227 output(D, t) = \u22a5. D remains in ERROR state until re-seeded.",
+    "source": "NIST SP 800-90A Rev. 1",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "WRONG ATTRIBUTION. SP 800-90A Rev. 1 Sec. 11.3 does not state the equation; the successive-output-block comparison is FIPS 140-2 Sec. 4.9.2 / ANSI X9.31, and it was deliberately dropped for SP 800-90A DRBGs (FIPS 140-2 IG 9.8). The 'D remains in ERROR until re-seeded' recovery rule is also wrong for 90A: a health-test failure is a catastrophic error requiring uninstantiation, not a reseed. Fidelity note: for a well-formed DRBG, repeated output blocks occur with probability ~2^-128, so the test as an *invariant* is near-vacuous operationally even where it is required.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-TAOCP-012",
+    "title": "Linked List Acyclic Termination Invariant (Null-Terminated)",
+    "tensor_equation": "\u2200 linear linked list L with sentinel null: \u2203k \u2265 0 such that next^k(head(L)) = null \u2227 \u2200i < k: next^i(head(L)) \u2260 null",
+    "source": "TAOCP Vol 1, Section 2.2.3-2.2.5 (Linked Allocation)",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: the antecedent presupposes the consequent. 'Linear list' is defined by acyclicity/null termination, so no structure can satisfy the hypothesis and violate the conclusion - a cyclic chain is simply not a linear list, and is excluded by the premise rather than falsifying the equation. To have teeth the antecedent must quantify over arbitrary node graphs reachable via next (e.g. 'for every chain reachable from head in a store where next may be corrupted, no node repeats'), which is the form an executable Floyd cycle-detection gate would need. As written it is a definition dressed as an invariant.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-TAOCP-013",
+    "title": "Linked List Structural Reachability Invariant",
+    "tensor_equation": "\u2200 node n in linked list L: \u2203k \u2265 0 such that next^k(head(L)) = n (every node is reachable from head)",
+    "source": "TAOCP Vol 1, Section 2.2.3-2.2.5 (Linked Allocation)",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: 'node n in linked list L' is *defined* by reachability from head, so 'for-all n in L: exists k, next^k(head) = n' is a tautology with no falsifying state. To have teeth it would need an independent membership predicate (e.g. 'every cell allocated to L by the allocator is reachable from head', which is a leak/dangling-pointer property) plus a termination condition (next^k must terminate, which fails for a corrupted list whose tail cycles back). As written nothing can violate it.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-OKASAKI-008",
+    "title": "No-Mutation Persistence Guarantee of Pure Functional Data Structures",
+    "tensor_equation": "\u2200 version v, \u2200 operation f, \u2200 state s: v_after = f(v). \u2200 read op r: r(v) = r'(v) where r, r' are any sequences of reads (reads are deterministic and independent of mutation history). \u2200 v: v is immutable (no in-place modification possible).",
+    "source": "Okasaki, Section 1.1 (thesis) / Chapter 2 (book, 1998)",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: no execution can violate this equation as written. (a) '\u2200 state s: v_after = f(v)' binds s and never uses it; the body is just the definition of function application and holds for any f. (b) 'r(v) = r'(v) where r, r' are any sequences of reads' is false on its face for any two different read sequences (head vs. size of the same list) unless 'sequence of reads' is silently reinterpreted as 'the same reads replayed', in which case it is a tautology under (a). (c) 'v is immutable (no in-place modification possible)' is an unbound predicate restating the hypothesis \u2014 it is the definition of a purely functional value, not a checkable property of an implementation. No counterexample can be constructed against any of the three conjuncts, so nothing is gated. Okasaki additionally states persistence as a definition/consequence of the language, never as a proved invariant.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-CRYPTO-015",
+    "title": "Threat modeling: enumerate assets, adversaries, and attack surfaces",
+    "tensor_equation": "\u2200 system S deployed in adversarial context: TM(S) = {assets, entry_points, trust_boundaries, threat_actors, threats}. Each threat has: asset affected \u2229 entry_point reachable \u2229 actor capable.",
+    "source": "anderson",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: the equation defines a set equal to a list of category names and contains no discriminating condition - 'invariant' has no binding, nothing can violate it. Compounding this, the structured enumeration is attributed to the wrong author: it is Shostack/Microsoft threat-modeling methodology, not a claim Ross Anderson makes in Chapters 2, 3 or 9. Chapter 9 ('Multilevel Security') is about Bell-LaPadula and MLS policy, and is unrelated to threat enumeration.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-CRYPTO-022",
+    "title": "OWASP A02: Key rotation and cryptographic agility",
+    "tensor_equation": "\u2200 cryptographic key k: max_age(k) \u2264 rotation_period. \u2200 retired algorithm A: system can migrate to successor A' without downtime. No hardcoded algorithm assumptions that prevent migration.",
+    "source": "owasp",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "MISCITATION plus HARDENING. (1) OWASP ASVS 4.0 V9 is 'Communication Verification Requirements' (TLS configuration); cryptographic key management and rotation requirements live in V6 'Stored Cryptography' (V6.4 Secret Management). (2) A02:2021 poses rotation as a checklist question, not a universal quantified requirement, and neither A02 nor ASVS mandates zero-downtime algorithm migration - 'crypto-agility' as a stated design requirement is NIST's framing (NISTIR 8547 / SP 800-131A transition guidance), not OWASP's. The '\u2200 key k: max_age(k) <= rotation_period' clause is also near-tautological: it is true by construction unless rotation_period is independently defined, which the axiom does not do.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-APPLIED-005",
+    "title": "Idempotent receiver (Hohpe & Woolf 2003)",
+    "tensor_equation": "\u2200message m, \u2200idempotent_receiver R, \u2200n \u2265 1: process(m, R, n) = process(m, R, 1)",
+    "source": "oracle:applied-computing",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: the quantifier domain already asserts the conclusion \u2014 'for-all idempotent_receiver R ... process(m,R,n) = process(m,R,1)' is the definition of idempotence used as its own premise, so no receiver is a counterexample (a non-idempotent receiver is simply outside the domain). A version with teeth quantifies over the *implementation obligation*, e.g. 'for-all receiver R exposed to an at-least-once channel: R must dedupe on message id or have naturally idempotent semantics', which a double-increment handler falsifies. Citation error as well: Idempotent Receiver is in EIP Chapter 10, 'Messaging Endpoints' (p. 528); Chapter 6 is 'Interlude: Simple Messaging'.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-APPLIED-007",
+    "title": "Error budget enforcement (Beyer et al. 2016)",
+    "tensor_equation": "\u2200service S with SLO target T, \u2200window W: total_errors(S, W) \u2264 (1 - T) \u00d7 total_requests(S, W)",
+    "source": "oracle:applied-computing",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "Direction-of-claim error: the source defines a BUDGET that is expected to be consumed and may be exhausted, not an invariant that holds. The entire mechanism in Ch. 3-4 and in The Site Reliability Workbook is what to do WHEN total_errors exceeds the budget (freeze launches, redirect effort to reliability) \u2014 an invariant that can never be violated would make the error-budget policy meaningless. Stating it as '\u2200 window W: total_errors <= (1-T) * total_requests' converts a policy target into a law the source explicitly expects to be broken. Second defect: the universal quantification over windows is trivially false for the intended reading \u2014 error budgets are computed over one fixed window (e.g. 30 days), whereas \u2200W includes a 10-request window in which a single failure gives 10% > 0.1%.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-APPLIED-008",
+    "title": "Metric-backed alerting (Google SRE 2016)",
+    "tensor_equation": "\u2200alert A: \u2203metric m, \u2203threshold t, \u2203window w, \u2203aggregate agg: fires(A, \u03c4) \u21d4 agg(m, \u03c4-w, \u03c4) > t",
+    "source": "oracle:applied-computing",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "FIDELITY (invented formalism, hardened into a biconditional): Chapter 6 states no such rule. It gives monitoring philosophy - white-box vs black-box, the four golden signals, keep alerting rules simple, page on symptoms - not a claim that every alert IS a single-metric single-threshold windowed aggregate. The universal biconditional excludes alert forms the SRE corpus itself endorses (multi-window multi-burn-rate error-budget alerts in the Workbook, dependency/absence alerts, ratio and quantile predicates over multiple series). A prose recommendation has been converted into a definitional equivalence the source does not assert.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-APPLIED-013",
+    "title": "Assessment validity (Messick 1989)",
+    "tensor_equation": "\u2200assessment A, \u2200construct C: A measures C iff coverage(A,C) \u2227 relevance(A,C) \u2227 \u00acconfound(A,C)",
+    "source": "oracle:applied-computing",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "MISSTATES THE CITED AUTHOR'S CENTRAL THESIS. Messick's defining move is that validity is NOT a property of a test or assessment: it is 'an integrated evaluative judgment of the degree to which empirical evidence and theoretical rationales support the adequacy and appropriateness of inferences and actions based on test scores'. The axiom's 'assessment A measures construct C iff ...' relocates validity back into the instrument, the position Messick wrote against. It also collapses his framework: Messick's validity has content, substantive, structural, generalizability, external and consequential aspects, and the consequential aspect (the social consequences of test use) \u2014 arguably his most-cited contribution \u2014 is absent from the 'iff'. Secondarily the equation is near-vacuous: coverage, relevance and confound are unbound predicates with no operational definition, so nothing can be shown to violate it.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-ETHICS-001",
+    "title": "Public Interest Primacy in Design Decisions",
+    "tensor_equation": "\u2200decision D in system design: (affectsPublicWelfare(D) \u2227 conflictsWithOrgInterests(D)) \u2192 publicWelfarePrevails(D)",
+    "source": "oracle:social-professional",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: 'publicWelfarePrevails(D)' has no operational threshold and no observable violation condition \u2014 every design decision can be narrated as public-welfare-serving after the fact, so the equation can never fail. Additionally the conflict-resolution rule the axiom asserts is not in \u00a71.1; it belongs to ACM \u00a73.1 / the Preamble / SE Code Principle 1.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-ETHICS-006",
+    "title": "Realistic Commitments \u2014 Evidence-Based Estimation",
+    "tensor_equation": "\u2200estimate E: basedOn(E) = documentedEvidence(E) \u2227 \u00acbasedOn(E) = optimism(E) \u2227 \u00acbasedOn(E) = externalPressure(E)\n\u2200project P: schedule(P) must include communication overhead, testing, and contingency",
+    "source": "oracle:social-professional",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "WRONG CLAUSE + UNFALSIFIABLE CONJUNCT: the quoted 'commitments are realistic \u2014 based on evidence, not optimism or pressure' is not clause 3.06 (that is professional standards); it is a loose paraphrase of 3.09, and 3.09's actual distinctive requirement \u2014 an uncertainty assessment accompanying each estimate \u2014 is dropped. Further, '\u00acbasedOn(E) = optimism(E)' is not observable: the psychological basis of an estimate leaves no artifact, so that conjunct admits no counterexample. Brooks's Law is cited as support for schedule padding, which is not what it says.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-ETHICS-013",
+    "title": "AI Risk Classification Before Deployment",
+    "tensor_equation": "\u2200AI system S: beforeDeployment(S) \u2192 classified(S, riskCategory) \u2227 riskCategory \u2208 {unacceptable, high, limited, minimal}\n\u2200S: riskCategory(S) = high \u2192 hasRiskManagement(S) \u2227 hasTechnicalDocumentation(S) \u2227 hasHumanOversight(S) \u2227 hasConformityAssessment(S)",
+    "source": "oracle:social-professional",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "MISSTATED LEGAL TAXONOMY + CITATION RANGE ERROR: 'unacceptable / high / limited / minimal' is European Commission explanatory framing, not an enacted classification in the Act \u2014 the enacted text has prohibited practices (Art. 5), high-risk (Art. 6 + Annex III), specific transparency-risk systems (Art. 50), and GPAI models (Chapter V); 'limited' and 'minimal' are not legal categories, and the Act imposes no general duty on every deployer to formally assign every AI system to one of four tiers before deployment. The citation also says 'Articles 9-14' while listing accuracy and robustness, which is Art. 15.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-ETHICS-018",
+    "title": "Conceptual Integrity in System Design",
+    "tensor_equation": "\u2200software system S: S must have a single architect or very small group A maintaining conceptual integrity(S)\n\u2200design decision D in S: D must be consistent with the system's architectural vision, not driven by implementer convenience alone",
+    "source": "oracle:social-professional",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "NORMATIVE-TO-INVARIANT + WRONG CHAPTER TITLE + UNFALSIFIABLE SECOND CONJUNCT: Brooks argues conceptual integrity SHOULD proceed from few minds and describes the aristocracy/democracy tension as a design tradeoff, not as a property every system must satisfy; the axiom's 'S must have a single architect' is a should turned into a must. The chapter title given in the citation does not exist in MMM. The second conjunct \u2014 a decision must be 'consistent with the architectural vision, not driven by implementer convenience alone' \u2014 has no artifact that could exhibit its violation, since motive is unobservable and 'architectural vision' is undefined.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-ETHICS-019",
+    "title": "Communication Overhead Scales as O(n^2)",
+    "tensor_equation": "\u2200team of size n: overhead(n) = O(n\u00b2) = (n(n-1))/2 communication channels\n\u2200task T assigned to n people: time(T) = work(T)/n + overhead(n)",
+    "source": "oracle:social-professional",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: line 1 equates 'overhead(n)' with the complete-graph edge count n(n-1)/2, which is an arithmetic identity and therefore cannot be violated by any team \u2014 it has no failure state and gates nothing. Line 2 is a fabricated cost model not present in MMM and mixes units (a channel count added to a time). The citation also misattributes the second-system effect to Ch. 7; it is Ch. 5, and Ch. 7 is 'Why Did the Tower of Babel Fail?'.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-ETHICS-020",
+    "title": "Second-System Effect \u2014 Feature Restraint",
+    "tensor_equation": "\u2200second system S2 designed by team T: T must actively resist adding features that were deferred from the first system\n\u2200feature F proposed for S2: F must be independently justified for S2, not 'we didn't have time for this in S1'",
+    "source": "oracle:social-professional",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: 'T must actively resist adding features' and 'F must be independently justified for S2' specify no measurable threshold \u2014 there is no artifact, count, or ratio whose value would demonstrate that a team failed to 'actively resist' or that a feature was not 'independently justified'. Any feature set can be retroactively described as justified, so the equation has no violation condition. It also converts Brooks's descriptive tendency ('the architect TENDS to incorporate deferred ideas') into a universal obligation, which is a category change from what Ch. 5 states.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-HCI-002",
+    "title": "Match Between System and Real World \u2014 Commands use domain vocabulary",
+    "tensor_equation": "\u2200cmd \u2208 CLI_commands: cmd.name \u2208 domain_vocabulary(cmd.domain) \u2227 cmd.behavior = user_mental_model(cmd.name). \u2200flag \u2208 cmd.flags: flag.name \u2208 domain_vocabulary(flag.domain).",
+    "source": "oracle:hci",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: neither `domain_vocabulary(d)` nor `user_mental_model(name)` is defined or enumerable, so no concrete command can be shown to violate the equation. `git rebase` is either in the domain vocabulary or not depending entirely on who is asked; there is no operational threshold or decision procedure, hence no violation condition. The equation is unfalsifiable as written.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-HCI-035",
+    "title": "Satisficing \u2014 Default behavior must match the most common use case",
+    "tensor_equation": "\u2200cmd \u2208 CLI_commands: cmd.default_behavior = most_common_use_case(cmd). \u2200flag \u2208 cmd.flags: flag.default = most_common_value(flag). \u2200cmd: cmd.zero_arg_behavior documented and useful.",
+    "source": "oracle:hci",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS + MISATTRIBUTED: (a) `most_common_use_case(cmd)` and `most_common_value(flag)` are undefined and unmeasured, so no command can be shown to violate the equation \u2014 there is no operational threshold or decision procedure; 'zero_arg_behavior documented and useful' has no test for 'useful'. (b) Satisficing is a descriptive claim about bounded-rational human choice (people accept the first good-enough option), not a prescriptive design mandate that defaults equal the modal use case. That prescription is closer to 'sensible defaults' / the 80-20 convention than to Simon or to the cited Norman chapter.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-TEST-001",
+    "title": "Equivalence Partitioning \u2014 one representative per class",
+    "tensor_equation": "\u2200 input domain D partitioned into classes {C_1,...,C_n} where \u2200a,b \u2208 C_i, behavior(a) \u21d4 behavior(b): testing one representative per C_i achieves coverage of all equivalence classes",
+    "source": "oracle:software-testing",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: the equation conditions on a partition in which a,b in the same class already satisfy behavior(a) <=> behavior(b). Under that premise, one representative per class is sufficient by definition of the premise \u2014 no test suite, program, or execution can violate it. I could not construct a counterexample: any suite that misses a fault does so because the partition was not behaviorally exact, which the premise excludes. The real (falsifiable) content of Myers' technique is 'partitions derived from the specification are heuristic and may be behaviorally wrong', which is the opposite of what the equation asserts.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-TEST-007",
+    "title": "Testing and Static Analysis are Complementary",
+    "tensor_equation": "testing(P) \u2229 static_analysis(P) \u2260 \u2205 (overlap exists) \u2227 testing(P) \u2288 static_analysis(P) (testing finds things analysis misses) \u2227 static_analysis(P) \u2288 testing(P) (analysis finds things testing misses). Neither subsumes the other.",
+    "source": "oracle:software-testing",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "Two faults. (1) Citation: Ch.6 of Pezze & Young is 'Dependence and Data Flow Models', not a complementarity discussion \u2014 the relevant material is Ch.1-3. (2) Fidelity/quantifier scope: the equation is written per-program over undefined sets testing(P), static_analysis(P), and in that form it is false. Counterexample: P is a 20-line program whose only fault is an unconditional nil dereference on line 3; any smoke test finds it and any nil-analysis finds it, so testing(P) = static_analysis(P) and both non-subsumption conjuncts fail. Pezze & Young make a claim about classes of techniques over the space of programs, not an invariant holding for each individual P.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-TEST-012",
+    "title": "Context-Dependent Testing \u2014 strategy must match risk profile",
+    "tensor_equation": "\u2200 system S with risk_profile R(S) = (safety_criticality, business_criticality, failure_cost): adequate_test_strategy(S) = f(R(S)). Safety-critical systems require higher coverage criteria and formal methods than low-risk CRUD apps.",
+    "source": "oracle:software-testing",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: the operative clause is 'adequate_test_strategy(S) = f(R(S))' \u2014 it asserts only that SOME unnamed function f exists mapping risk profile to strategy. f is never defined, so no test strategy can violate it: any assignment of strategies to systems is trivially a function of a risk profile that includes the system's identity. I cannot construct a violating suite. The illustrative second sentence ('safety-critical requires higher coverage criteria') would be falsifiable if it named a threshold, but it names none. As written the equation forbids nothing.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-TEST-017",
+    "title": "Fuzzing Coverage Monotonicity \u2014 more fuzz time implies more coverage",
+    "tensor_equation": "\u2200 fuzzer F, \u2200 SUT S: coverage(F, S, t_2) \u2287 coverage(F, S, t_1) for t_2 > t_1. Coverage is monotonically non-decreasing with fuzzing time. If coverage plateaus, either the fuzzer lacks novelty or the attack surface is saturated.",
+    "source": "oracle:software-testing",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: coverage(F,S,t) as normally defined is the CUMULATIVE set of edges/blocks reached up to time t, so coverage(t2) superset-of coverage(t1) for t2 > t1 holds by construction of a monotone accumulator. I cannot construct a fuzzing run that violates it \u2014 a set that only ever has elements added is non-decreasing definitionally. The trailing sentence ('if coverage plateaus, either the fuzzer lacks novelty or the attack surface is saturated') is an unfalsifiable disjunction covering both cases. The substantive, non-vacuous fact in this area is the opposite direction \u2014 coverage grows logarithmically and exponentially more compute is needed for each new edge (Boehme & Falk, 'Fuzzing: On the Exponential Cost of Vulnerability Discovery', FSE 2020) \u2014 which the axiom does not state.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-TEST-027",
+    "title": "Test Double Taxonomy \u2014 choose the right double type",
+    "tensor_equation": "\u2200 test requiring isolation from dependency D, the appropriate test double type \u2208 {Dummy, Stub, Spy, Mock, Fake} is determined by the test's interaction pattern with D. Using a Mock when a Stub suffices adds unnecessary coupling to implementation details.",
+    "source": "oracle:software-testing",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: the operative clause is 'the appropriate double type is determined by the test's interaction pattern' \u2014 it asserts that some undefined determination function exists, without giving the mapping. No test can violate it, because for any chosen double one can assert post hoc that the interaction pattern determined it; I cannot construct a counterexample suite. The second sentence ('using a Mock when a Stub suffices adds coupling') is the only falsifiable content and it is a P2-style style judgement, not an invariant with a decision procedure \u2014 'suffices' is likewise undefined.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-TEST-030",
+    "title": "Oracle Problem \u2014 an automated test without an oracle is just exercise",
+    "tensor_equation": "\u2200 test t in automated suite T: t must include an oracle O (explicit or implicit) that classifies the execution outcome as pass or fail. A test that exercises code without checking any observable result has zero fault-detection capability.",
+    "source": "oracle:software-testing",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS as written, and internally inconsistent. By admitting IMPLICIT oracles, the axiom becomes unfalsifiable: Barr et al. define implicit oracles as those needing no domain knowledge \u2014 crashes, hangs, uncaught exceptions \u2014 and every executable test has one, so no test in any automated suite can violate 'must include an oracle (explicit or implicit)'. I cannot construct a violating test. Worse, the second sentence then contradicts the first: it claims a test that checks no observable result has ZERO fault-detection capability, but such a test still carries the implicit crash oracle \u2014 which is precisely the whole basis of fuzzing (Miller et al. 1990 found real UNIX utility faults with no assertions at all). To have teeth the axiom must require an EXPLICIT oracle and drop the implicit escape hatch.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-AUTHZ-018",
+    "title": "Seccomp filter: Explicit default action, no implicit allow",
+    "tensor_equation": "\u2200syscall_number S: filter_action(S) \u2208 {SECCOMP_RET_KILL_PROCESS, SECCOMP_RET_KILL_THREAD, SECCOMP_RET_TRAP, SECCOMP_RET_ERRNO, SECCOMP_RET_TRACE, SECCOMP_RET_LOG, SECCOMP_RET_ALLOW}\n\u2227 default_action(S) \u2208 {KILL, ERRNO} when no rule matches\nFilter must be total: every possible syscall has a defined action, even if the action is the default.",
+    "source": "oracle:authorization-security",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "(1) The action enumeration is incomplete: it omits SECCOMP_RET_USER_NOTIF (Linux 5.0+), which is the mechanism the axiom's own citation of seccomp_unotify(2) describes. It also omits SECCOMP_RET_KILL as the legacy alias. (2) 'default_action(S) \u2208 {KILL, ERRNO} when no rule matches' is a policy preference, not something seccomp(2) or kernel/seccomp.c states \u2014 the kernel enforces no default at all; SCMP_ACT_ALLOW is a legal and widely used default action for denylist-style profiles, so real, correct seccomp configurations violate the axiom. (3) The first conjunct ('filter_action(S) \u2208 {the set of all defined return actions}') is vacuous: a seccomp filter's return value cannot be anything other than a defined action (undefined bits are treated as SECCOMP_RET_KILL_PROCESS), so no configuration can falsify that clause.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-CORRECT-009",
+    "title": "Dijkstra \u2014 wp for Repetition (do-od) and Loop Invariant",
+    "tensor_equation": "\u2200loop DO: do B\u2081 \u2192 S\u2081 \u25a1 B\u2082 \u2192 S\u2082 \u25a1 ... \u25a1 B\u2099 \u2192 S\u2099 od, invariant P, variant t (integer):\n  P is invariant: (P \u2227 B\u1d62) \u21d2 wp(S\u1d62, P) for all i\n  t is bounded: (P \u2227 (\u2203i: B\u1d62)) \u21d2 t \u2265 0\n  t decreases: (P \u2227 B\u1d62) \u21d2 wp(S\u1d62, t < T) for all i, where T is initial value of t\n  wp(DO, R) = P \u2227 (\u2200i: \u00acB\u1d62 \u21d2 R)",
+    "source": "oracle:software-correctness",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "The final line 'wp(DO, R) = P \u2227 (\u2200i: \u00acB\u1d62 \u21d2 R)' is not Dijkstra's semantics and is wrong in both structure and strength. (a) Dijkstra's theorem concludes an implication P \u21d2 wp(DO, P \u2227 \u00acBB), never an equality with the invariant \u2014 wp(DO,R) is defined by the H_k limit, and P is not unique, so an equality is impossible. (b) The scoping is broken: it should be (\u2200i: \u00acB\u1d62) \u21d2 R, i.e. \u00acBB \u21d2 R; as written, '\u2200i: \u00acB\u1d62 \u21d2 R' is satisfied vacuously whenever every B\u1d62 is false. Counterexample to the stated equality: DO \u2261 do x>0 \u2192 x:=x-1 od, R \u2261 (x=0), P \u2261 (x\u22650). True wp(DO,R) = (x\u22650). The formula gives (x\u22650) \u2227 (x\u22640 \u21d2 x=0) = (x\u22650), coincidentally equal here; take instead P \u2261 true (also an invariant), and the formula yields (x\u22640 \u21d2 x=0), which is true at x=-1 while the loop leaves x=-1 \u2260 0. The equation is unsound.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-CORRECT-011",
+    "title": "Dijkstra \u2014 The Program as a Predicate Transformer",
+    "tensor_equation": "\u2200program S:\n  S is a function: Predicate \u2192 Predicate\n  wp(S, \u00b7) maps postconditions to preconditions\n  The meaning of S IS wp(S, \u00b7) \u2014 programs are predicate transformers",
+    "source": "oracle:software-correctness",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: nothing can violate this. 'S is a function: Predicate \u2192 Predicate', 'wp(S,\u00b7) maps postconditions to preconditions' and 'the meaning of S IS wp(S,\u00b7)' are typing/identity declarations with no constrained predicate, no premise, and no consequent that a program state or execution could falsify. There is no program C, state \u03c3, or execution trace that makes it false \u2014 unlike AX-007, which at least carries the Excluded Miracle and monotonicity as checkable laws. As an executable invariant gate this admits every implementation. It restates a definition, not an axiom with teeth.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-CORRECT-021",
+    "title": "Lamport \u2014 Liveness Property: \u25c7P (Eventually/Guarantee)",
+    "tensor_equation": "\u2200program, \u2200predicate P (liveness property):\n  P is a liveness property iff: any finite execution can be extended to satisfy P\n  \u25c7P \u2261 P eventually holds  (eventually/guarantee)\n  \u25a1\u25c7P \u2261 P holds infinitely often  (recurrence)\n  \u25c7\u25a1P \u2261 P holds eventually forever  (stability/persistence)\n  To prove \u25c7Q: requires a well-founded measure that decreases until Q holds",
+    "source": "oracle:software-correctness",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "The definitional line is misattributed. 'P is a liveness property iff any finite execution can be extended to satisfy P' is verbatim the Alpern & Schneider 1985 definition ('a partial execution \u03b1 is live for P iff \u2203\u03b2 with \u03b1\u03b2 \u2208 P; P is a liveness property iff every partial execution is live'), IPL 21(4), 1985 \u2014 not Lamport 1977, which defines liveness informally as 'something good eventually happens'. The \u25a1\u25c7 / \u25c7\u25a1 recurrence and persistence operators are also not in the 1977 paper; that notation enters via Pnueli's temporal logic and Lamport's later work.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-ALGO-002",
+    "title": "Greedy Choice Property \u2014 A globally optimal solution can be arrived at by making a locally optimal (greedy) choice",
+    "tensor_equation": "\u2200problem P, \u2200input I: IsGreedy(P) \u2192 \u2203greedy_choice(I) such that greedy_choice(I) \u2208 some_optimal_solution(I). The greedy choice must be made FIRST, before recursive solution of smaller subproblem.",
+    "source": "oracle:algorithm-design",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: the antecedent 'IsGreedy(P)' is an unbound predicate \u2014 nothing in the equation determines when it holds, so no problem instance can violate the implication. ALSO MISATTRIBUTED: the greedy-choice property is Cormen-Leiserson-Rivest-Stein's framing, not Kleinberg & Tardos'; KT deliberately teach 'staying ahead' and 'exchange argument' instead, and the cited section 4.2 is about minimizing lateness.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-ALGO-007",
+    "title": "Divide-and-Conquer Correctness via Strong Induction \u2014 Base case + combine step preserves correctness",
+    "tensor_equation": "\u2200D&C algorithm A on input of size n: Base(n \u2264 n\u2080) \u2192 A(n) = trivial_solution(n). Inductive step: A(n) = combine(A(n/2_left), A(n/2_right)) where combine preserves the solution property.",
+    "source": "oracle:algorithm-design",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: the inductive step is stated as 'A(n) = combine(A(n/2_left), A(n/2_right)) where combine preserves the solution property'. 'preserves the solution property' is an unbound predicate supplied as a hypothesis, so the rule asserts 'if combine is correct then A is correct' \u2014 no algorithm can violate it, because any incorrect combine simply falsifies the unstated hypothesis rather than the equation. It also silently assumes an exact two-way n/2 split, excluding a-way and uneven divide-and-conquer (Strassen's 7-way, Karatsuba's 3-way). Additionally the cited section covers running time, not correctness.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-ALGO-013",
+    "title": "DFS Edge Classification \u2014 Every edge is classified as tree, back, forward, or cross edge",
+    "tensor_equation": "\u2200edge (u,v) \u2208 E classified by DFS on G: (u,v) is a tree edge if v discovered from u; back edge if v is an ancestor of u; forward edge if u is an ancestor of v and (u,v) not a tree edge; cross edge otherwise. In undirected graphs, every edge is either tree or back.",
+    "source": "oracle:algorithm-design",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "MISATTRIBUTED: the four-way tree/back/forward/cross edge classification, and the theorem that undirected DFS produces only tree and back edges, are Cormen-Leiserson-Rivest-Stein (3rd ed section 22.3 / 4th ed section 20.3, Theorem 22.10/20.10). The cited Kleinberg & Tardos section 3.3 has a different title and does not state this.",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-ALGO-015",
+    "title": "Skiena's Algorithm Selection \u2014 Pick the right algorithmic paradigm from problem structure",
+    "tensor_equation": "\u2200problem P: If P has optimal_substructure \u2227 overlapping_subproblems \u2192 DP. If P has greedy_choice_property \u2192 Greedy. If P is decomposable_into_independent_subproblems \u2192 D&C. If P is search_over_exponential_space \u2192 Backtracking/B&B. If P is polynomial_on_restricted_inputs \u2192 Parameterized algorithm.",
+    "source": "oracle:algorithm-design",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS: every antecedent \u2014 has_optimal_substructure, has_greedy_choice_property, is_decomposable_into_independent_subproblems, is_search_over_exponential_space, is_polynomial_on_restricted_inputs \u2014 is an unbound predicate, and the consequents ('-> DP', '-> Greedy') are paradigm names rather than assertions about any state, so no input can falsify the rule. ALSO MISCITED: section 1.2 of the cited edition is 'Selecting the Right Jobs' and contains no such taxonomy.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-MONITOR-001",
+    "title": "Class invariant holds at all stable times (Meyer 1997, Design by Contract)",
+    "tensor_equation": "\u2200class C, \u2200instance o:C, \u2200public_method m, \u2200call_time t: pre_m(o,t) \u2227 inv_C(o,t_before) \u2192 post_m(o,t_after) \u2227 inv_C(o,t_after)",
+    "source": "oracle:runtime-monitoring",
+    "verdict": "VERIFIED",
+    "original_discrepancy": "",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-MONITOR-002",
+    "title": "Precondition violation is the caller's bug, postcondition violation is the callee's bug (Meyer 1997)",
+    "tensor_equation": "\u2200method m, \u2200call: pre_m(call_args) = false \u2192 fault \u2208 caller; post_m(call_result) = false \u2192 fault \u2208 callee",
+    "source": "oracle:runtime-monitoring",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [1 (classification, not constraint) \u2014 also 4, since fault attribution is true by stipulation]: This assigns blame; it does not constrain any execution. 'fault \u2208 caller' is not an observable of any run \u2014 no state, trace, or program output can contradict it, because the axiom itself stipulates the labeling. Every possible system, correct or broken, satisfies it: a precondition violation simply *is* named a caller bug. It forbids no behavior, only names one. (Contrast a sound version: 'the callee must check pre_m and fail closed', which a missing check would violate.)",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-MONITOR-003",
+    "title": "Safety property: nothing bad ever happens (Lamport 1977)",
+    "tensor_equation": "\u2200reachable_state s: I(s) holds, where I is the safety invariant",
+    "source": "oracle:runtime-monitoring",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [6 (unbound predicate)]: I is an unbound schematic predicate \u2014 the axiom never fixes which property I is, and nothing outside the axiom supplies one. To exhibit a violating state you must first be told what I asserts; since I ranges over any predicate, one can always instantiate I as `true` and satisfy the formula for every system. It is a template for invariants, not an invariant: it forbids nothing until a concrete I is substituted.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-MONITOR-004",
+    "title": "Liveness property: something good eventually happens (Lamport 1977)",
+    "tensor_equation": "\u2200fair_execution e: \u25c7P(e) \u2014 eventually P holds in every fair execution",
+    "source": "oracle:runtime-monitoring",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [6 (unbound predicate); also 1 (classification, not constraint)]: P is a free predicate variable that the axiom never binds \u2014 this is a schema, not a proposition. To evaluate it you must first choose P, and the axiom gives no rule for choosing; instantiating P := true satisfies it in every execution of every system. The title confirms the intent is to classify what a liveness property is, not to assert that any particular good thing happens. No system state can violate it.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-MONITOR-005",
+    "title": "Every property is the intersection of a safety property and a liveness property (Alpern & Schneider 1985)",
+    "tensor_equation": "\u2200property P: P = S_P \u2229 L_P, where S_P is a safety property and L_P is a liveness property",
+    "source": "oracle:runtime-monitoring",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [1 (classification, not constraint)]: This is the Alpern\u2013Schneider decomposition theorem, proven for every property over infinite traces. Because it is a theorem, no trace set, program, or execution can make it false \u2014 a counterexample would refute a published proof, not reveal a bug. It also constrains nothing about a system under review: it classifies properties rather than requiring any property to hold.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-MONITOR-007",
+    "title": "Liveness properties require fairness assumptions and cannot be enforced by finite-prefix rejection (Alpern & Schneider 1985)",
+    "tensor_equation": "\u2200liveness_property L: \u00ac\u2203finite_prefix_monitor M such that M enforces L; liveness requires fairness \u2227 timeout-based detection",
+    "source": "oracle:runtime-monitoring",
+    "verdict": "VERIFIED",
+    "original_discrepancy": "",
+    "reason": "not an invariant"
+  },
+  {
+    "id": "AX-ORACLE-MONITOR-026",
+    "title": "Mutual exclusion is a safety property; starvation-freedom is a liveness property (Lamport 1977)",
+    "tensor_equation": "\u2200critical_section CS: \u25a1(at_most_one_process_in(CS)) is safety; \u2200process p_ready: \u25c7(p enters CS) is liveness",
+    "source": "oracle:runtime-monitoring",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [unclassified]: This is a classification statement, not a constraint. It does not assert that mutual exclusion holds or that any ready process ever enters \u2014 it asserts that those formulas belong to the safety and liveness classes respectively, which is true by the Alpern-Schneider definitions (\u25a1 of a state predicate is always a safety property; \u25c7 is always liveness). A program that lets two threads into the critical section and starves a third does NOT falsify it: the formulas retain their classification regardless. No execution, input, or state can make this equation false, so no implementation can ever be found in violation.",
+    "reason": "vacuous"
+  },
+  {
+    "id": "AX-ORACLE-MONITOR-032",
+    "title": "Hazard analysis must identify safety constraints before implementation (Leveson, STPA)",
+    "tensor_equation": "\u2200system S: before_code(S): hazards(S) are identified; \u2200hazard H \u2208 hazards(S): \u2203safety_constraint C such that C prevents H; C is specified as a tensor equation",
+    "source": "oracle:runtime-monitoring",
+    "verdict": "DISPUTED",
+    "original_discrepancy": "VACUOUS [unclassified]: Two independent escapes. (1) hazards(S) is self-selected \u2014 nothing outside the axiom defines what the hazard set of a system is, so identifying zero hazards makes the inner \u2200 vacuously true for every system. (2) `prevents(C,H)` is an unbound schematic predicate with no definition of prevention, so any constraint whatsoever can be asserted to prevent any hazard and the assertion cannot be refuted. There is no program state, input, or execution that could be exhibited as a violation; the axiom constrains only a process artifact whose contents it also defines.",
+    "reason": "vacuous"
+  }
+]
