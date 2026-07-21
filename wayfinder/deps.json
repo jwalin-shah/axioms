@@ -1,0 +1,30 @@
+{
+  "project": "axioms",
+  "version": "1",
+  "updated": "2026-07-21",
+  "provides": {
+    "packages": [],
+    "interfaces": ["axioms.json", "source-cache/"],
+    "files": ["axioms.json", "source-cache/*.md"],
+    "services": []
+  },
+  "depends_on": {
+    "services": [],
+    "repos": [],
+    "configs": [],
+    "binaries": []
+  },
+  "connections": {
+    "consumed_by_knowledge_engine": {
+      "via": "main.py (cocoindex pipeline)",
+      "consumer": "knowledge-engine:Neo4j",
+      "protocol": "os.read JSON files",
+      "fail_action": "knowledge-engine has stale data (re-index required)"
+    },
+    "audited_by_bridge": {
+      "consumer": "bridge:audit workflow",
+      "protocol": "bridge/knowledge/ queries Neo4j",
+      "fail_action": "audit produces stale evidence"
+    }
+  }
+}
