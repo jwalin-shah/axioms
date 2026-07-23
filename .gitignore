@@ -1,1 +1,7 @@
 .claude/.preflight-status
+*.pem
+credentials.json
+*_rsa
+.netrc
+.env.*
+.env
