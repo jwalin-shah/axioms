@@ -5,3 +5,4 @@ credentials.json
 .netrc
 .env.*
 .env
+.tldr/
