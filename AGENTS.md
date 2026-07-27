@@ -1,6 +1,7 @@
 # Axioms — Agent Instructions
 
-**Project:** Axiom corpus — 2183 engineering axioms from production systems, textbooks, and standards.
+**Project:** Axiom corpus — 2231 engineering axioms from production systems, textbooks, and standards.
+Status: 2177 VERIFIED, 1 UNCERTAIN, 5 DISPUTED (verified 2026-07-25).
 **Role:** Reference library for bridge + orbit verification. Not a codebase — a knowledge base.
 **Default branch:** `main`
 
@@ -82,11 +83,38 @@ brew services list | grep neo4j  # verify running
 
 ---
 
+## axioms.json Structure & Filtering
+
+**File format:** JSON array of axiom objects. Each axiom:
+```json
+{
+  "id": "AX-API-024",
+  "equation": "∀list endpoint E: pagination_type(E) = ...",
+  "domain": "api",
+  "category": "software-correctness",
+  "verdict": "VERIFIED",
+  "score": 0.82,
+  "source": "textbook-formal"
+}
+```
+
+**Categories** (17 total): Saltzer-Schroeder, software-correctness, software-testing, 
+architecture, sandbox, safety, provenance, testing, testability, systems, oracle, fm, 
+can, env, api, sso, oracle-linux.
+
+**Bridge-orbit audit filtering:** From 2231 axioms, audit selects ~117 by:
+1. Category match (10+ of 17 categories relevant to bridge/orbit)
+2. Concept search (fencing, isolation, dispatch, ledger, audit log)
+3. Exclusion (protocol/network specs, not design principles)
+
+**Validation:** Each axiom has `verdict` (VERIFIED/UNCERTAIN/DISPUTED) and `source` 
+(trust level). Proof: axioms.json itself, Neo4j category queries.
+
 ## Key Files
 
 | File | Purpose |
 |---|---|
-| `axioms.json` | 2183 axioms (the corpus) |
+| `axioms.json` | 2231 axioms (the corpus), Neo4j backup, queryable by category/domain/verdict |
 | `PRINCIPLES.md` | Agent constitution — the Three Questions, source trust, gate rules |
 | `PLAN.md` | Pipeline plan — literature → invariants → TestAX* gates |
 | `FINDINGS.md` | Verification run findings (825 axioms) |
