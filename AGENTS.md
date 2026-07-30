@@ -98,8 +98,8 @@ brew services list | grep neo4j  # verify running
 }
 ```
 
-**Categories** (17 total): Saltzer-Schroeder, software-correctness, software-testing, 
-architecture, sandbox, safety, provenance, testing, testability, systems, oracle, fm, 
+**Categories** (17 total): Saltzer-Schroeder, software-correctness, software-testing,
+architecture, sandbox, safety, provenance, testing, testability, systems, oracle, fm,
 can, env, api, sso, oracle-linux.
 
 **Bridge-orbit audit filtering:** From 2231 axioms, audit selects ~117 by:
@@ -107,7 +107,7 @@ can, env, api, sso, oracle-linux.
 2. Concept search (fencing, isolation, dispatch, ledger, audit log)
 3. Exclusion (protocol/network specs, not design principles)
 
-**Validation:** Each axiom has `verdict` (VERIFIED/UNCERTAIN/DISPUTED) and `source` 
+**Validation:** Each axiom has `verdict` (VERIFIED/UNCERTAIN/DISPUTED) and `source`
 (trust level). Proof: axioms.json itself, Neo4j category queries.
 
 ## Key Files
@@ -129,10 +129,10 @@ can, env, api, sso, oracle-linux.
 
 ## Neo4j
 
-The knowledge engine runs on `neo4j://localhost:7687` (neo4j/axiom-knowledge).
+The knowledge engine runs on `neo4j://localhost:7687` (neo4j/[credential redacted]).
 Query it directly:
 ```bash
-curl -s -u neo4j:axiom-knowledge "http://localhost:7474/db/neo4j/tx/commit" \
+curl -s -u neo4j:[credential redacted] "http://localhost:7474/db/neo4j/tx/commit" \
   -H "Content-Type: application/json" \
   -d '{"statements":[{"statement":"MATCH (a:Axiom) RETURN count(a)"}]}'
 ```

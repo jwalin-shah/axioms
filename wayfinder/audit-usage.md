@@ -29,14 +29,14 @@ The audit is NOT:
 ```bash
 # 1. Verify Neo4j is current
 brew services list | grep neo4j  # must say "started"
-curl -s -u neo4j:axiom-knowledge "http://localhost:7474/db/neo4j/tx/commit" \
+curl -s -u neo4j:[credential redacted] "http://localhost:7474/db/neo4j/tx/commit" \
   -H "Content-Type: application/json" \
   -d '{"statements":[{"statement":"MATCH (a:Axiom) RETURN count(a)"}]}' | jq '.results[0].data[0].row[0]'
 # Should return 1196
 
 # 2. Generate the filtered axiom corpus
 # (Run from axioms repo)
-curl -s -u neo4j:axiom-knowledge "http://localhost:7474/db/neo4j/tx/commit" \
+curl -s -u neo4j:[credential redacted] "http://localhost:7474/db/neo4j/tx/commit" \
   -H "Content-Type: application/json" \
   -d '{"statements":[{"statement":"MATCH (a:Axiom) WHERE a.category IN [\"saltzer-schroeder\", \"software-correctness\", \"software-testing\", \"architecture\", \"sandbox\", \"testing\", \"testability\", \"provenance\", \"systems\", \"safety\"] OR a.id IN [\"AX-GVISOR-003\", \"AX-DDIA-022\", \"AX-DDIA-004\", \"AX-ORACLE-MONITOR-040\", \"AX-ORACLE-AUTHZ-013\", \"AX-ORACLE-APPLIED-012\", \"AX-ORACLE-OSTEP-015\", \"AX-CRYPTO-016\", \"AX-ORACLE-AUTHZ-017\", \"AX-ORACLE-DTXN-018\", \"AX-SAIP-021\", \"AX-SQLITE-005\"] RETURN a.id AS id, a.equation AS equation, a.domain AS domain, a.category AS category, a.severity AS severity, a.verdict AS verdict"}]}' \
   | jq '[.results[0].data[] | {id: .row[0], equation: .row[1], domain: .row[2], category: .row[3], severity: .row[4], verdict: .row[5]}]' \

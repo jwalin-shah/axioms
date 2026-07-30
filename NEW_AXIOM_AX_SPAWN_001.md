@@ -1,9 +1,9 @@
 # New Axiom: AX-SPAWN-001
 
-**Discovery Date:** 2026-07-25  
-**Source:** Documentation audit + spawn system debugging  
-**Status:** VERIFIED (via systematic analysis)  
-**Domain:** systems, spawn, observability, error-handling  
+**Discovery Date:** 2026-07-25
+**Source:** Documentation audit + spawn system debugging
+**Status:** VERIFIED (via systematic analysis)
+**Domain:** systems, spawn, observability, error-handling
 
 ---
 
@@ -144,7 +144,7 @@ For any spawn system:
 {
   "verification_commands": [
     {
-      "argv": ["curl", "-s", "-u", "neo4j:axiom-knowledge", 
+      "argv": ["curl", "-s", "-u", "neo4j:[credential redacted]",
                "http://localhost:7474/db/neo4j/tx/commit", ...]
     }
   ]
@@ -155,7 +155,7 @@ For any spawn system:
 
 **Testing:** Direct verification (no sandbox) works perfectly
 ```bash
-$ curl -s -u neo4j:axiom-knowledge http://localhost:7474/...
+$ curl -s -u neo4j:[credential redacted] http://localhost:7474/...
 → Returns axiom count immediately ✅
 ```
 
