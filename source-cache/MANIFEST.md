@@ -3,6 +3,7 @@
 
 | File | Lines | Status | What's missing |
 |---|---|---|---|
+| go-memory-model.md | 833 | EXTRACTED | GOMEM-001..036 promoted into axioms.json (DRF-SC, happens-before, channels, locks, atomics, incorrect-sync, compiler restrictions). Source: https://go.dev/ref/mem (2022-06-06) + sync package appendix. |
 | compiler-invariants-oracle.md | 603 | NOT_EXTRACTED | 33 INV- sections (DFA, LR parsing, type checking, SSA, dataflow, optimization, register allocation, instruction selection) — Dragon Book, Cooper & Torczon, Appel, Muchnick |
 | runtime-monitoring-oracle.md | 310 | UNEXTRACTED | Meyer, Lamport, Alpern-Schneider, Leveson, SRE — 40 axioms claimed but not linked to this source |
 | saip-oracle.md | 410 | UNEXTRACTED | Quality attribute scenarios from Bass, Clements, Kazman (SAIP 4th ed) |

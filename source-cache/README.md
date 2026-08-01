@@ -17,6 +17,7 @@ orbit-specific applications noted where relevant.
 | `fowler-oracle.md` | Fowler (1999/2002) | Refactoring catalog, code smells, two-hats principle, enterprise patterns | ✅ COMPLETE |
 | `kernighan-plaughter-oracle.md` | Kernighan & Plaugher (1974/1999) | Simplicity, clarity, generality, interfaces, debugging, testing, portability | ✅ COMPLETE |
 | `ousterhout-oracle.md` | Ousterhout (2018) | Deep modules, information hiding, strategic programming, design-it-twice | ✅ COMPLETE |
+| `go-memory-model.md` | Go Memory Model (go.dev/ref/mem, 2022-06-06) | DRF-SC, happens-before, channels, locks, atomics, incorrect sync/compilation (GOMEM-001..036) | ✅ COMPLETE |
 
 ## Infrastructure (How systems stay up)
 
